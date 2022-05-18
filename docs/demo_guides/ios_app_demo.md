@@ -71,7 +71,7 @@ IOS 示例的代码结构如下图所示：
 ios-detection_demo/detection_demo/models/mobilenetv1-ssd
 ```
 
-  2、`libpaddle_api_light_bundled.a`、`paddle_api.h`：Paddle-Lite C++ 预测库和头文件
+  2、`libpaddle_api_light_bundled.a`、`paddle_api.h`：Paddle Lite C++ 预测库和头文件
 
 ```shell
 # 位置：
@@ -92,7 +92,7 @@ ios-detection_demo/detection_demo/ViewController.mm
 
 ## 代码讲解 （如何使用 Paddle Lite `C++ API` 执行预测）
 
-IOS 示例基于 `C++ API` 开发，调用 Paddle Lite `C++ API` 包括以下五步。更详细的 `API` 描述参考： [ Paddle-Lite C++ API ](../api_reference/cxx_api_doc)。
+IOS 示例基于 `C++ API` 开发，调用 Paddle Lite `C++ API` 包括以下五步。更详细的 `API` 描述参考： [ Paddle Lite C++ API ](../api_reference/cxx_api_doc)。
 
 ```c++
 #include <iostream>
@@ -141,3 +141,7 @@ for (int i = 0; i < ShapeProduction(output_tensor->shape()); i += 100) {
    #include "include/paddle_use_ops.h"
    #include "include/paddle_use_kernels.h"
   ```
+- 如果想用 FP16 模型推理：
+  - 更新预测库：包含FP16 kernel的预测库，可以在 [release 官网](https://github.com/PaddlePaddle/Paddle-Lite/tags)下载，也可以参考[源码编译文档](../source_compile/macos_compile_ios.rst)，自行编译。
+  - 更新 nb 模型：需要使用 OPT 工具，将 `enable_fp16` 设置为 ON，重新转换模型。
+  - FP16 预测库和 FP16 模型只在**V8.2 架构以上的手机**上运行

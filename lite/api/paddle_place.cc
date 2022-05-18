@@ -60,7 +60,8 @@ const std::string& ActivationTypeToStr(ActivationType act) {
                                            "Reciprocal",
                                            "ThresholdedRelu",
                                            "Elu",
-                                           "HardSigmoid"};
+                                           "HardSigmoid",
+                                           "log"};
   auto x = static_cast<int>(act);
   CHECK_LT(x, static_cast<int>(ActivationType::NUM));
   return act2string[x];
@@ -139,6 +140,8 @@ const std::string& TargetRepr(TargetType target) {
                                               "kMLU",
                                               "kRKNPU",
                                               "kAPU",
+                                              "kHuaweiAscendNPU",
+                                              "kImaginationNNA",
                                               "kIntelFPGA",
                                               "kMetal",
                                               "kNNAdapter"};
@@ -192,7 +195,8 @@ const std::string& CLPrecisionTypeToStr(CLPrecisionType type) {
 }
 
 std::set<TargetType> ExpandValidTargets(TargetType target) {
-  static const std::set<TargetType> valid_set({TARGET(kX86),
+  static const std::set<TargetType> valid_set({TARGET(kHost),
+                                               TARGET(kX86),
                                                TARGET(kCUDA),
                                                TARGET(kARM),
                                                TARGET(kOpenCL),
@@ -203,6 +207,8 @@ std::set<TargetType> ExpandValidTargets(TargetType target) {
                                                TARGET(kAPU),
                                                TARGET(kRKNPU),
                                                TARGET(kFPGA),
+                                               TARGET(kHuaweiAscendNPU),
+                                               TARGET(kImaginationNNA),
                                                TARGET(kIntelFPGA),
                                                TARGET(kMetal),
                                                TARGET(kNNAdapter)});

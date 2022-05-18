@@ -4,7 +4,7 @@ set -e
 #####################################################################################################
 # 1. global variables, you can change them according to your requirements
 #####################################################################################################
-# armv8 or armv7hf or armv7, default armv8.
+# armv8 or armv7hf or armv7 or x86, default armv8.
 ARCH=armv8
 # gcc or clang, default gcc.
 TOOLCHAIN=gcc
@@ -38,20 +38,42 @@ ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://gith
 WITH_NNADAPTER=OFF
 NNADAPTER_WITH_ROCKCHIP_NPU=OFF
 NNADAPTER_ROCKCHIP_NPU_SDK_ROOT="$(pwd)/rknpu_ddk"  # Download RKNPU SDK from https://github.com/airockchip/rknpu_ddk.git
+NNADAPTER_WITH_EEASYTECH_NPU=OFF
+NNADAPTER_EEASYTECH_NPU_SDK_ROOT="$(pwd)/eznpu_ddk"
 NNADAPTER_WITH_IMAGINATION_NNA=OFF
 NNADAPTER_IMAGINATION_NNA_SDK_ROOT="$(pwd)/imagination_nna_sdk"
 NNADAPTER_WITH_HUAWEI_ASCEND_NPU=OFF
 NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="/usr/local/Ascend/ascend-toolkit/latest"
+NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION=""
 NNADAPTER_WITH_AMLOGIC_NPU=OFF
 NNADAPTER_AMLOGIC_NPU_SDK_ROOT="$(pwd)/amlnpu_ddk"
 NNADAPTER_WITH_CAMBRICON_MLU=OFF
 NNADAPTER_CAMBRICON_MLU_SDK_ROOT="$(pwd)/cambricon_mlu_sdk"
+NNADAPTER_WITH_VERISILICON_TIMVX=OFF
+NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG="main"
+NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=""
+NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="http://paddlelite-demo.bj.bcebos.com/devices/verisilicon/sdk/viv_sdk_linux_arm64_6_4_4_3_generic.tgz"
+NNADAPTER_WITH_NVIDIA_TENSORRT=OFF
+NNADAPTER_NVIDIA_CUDA_ROOT="/usr/local/cuda"
+NNADAPTER_NVIDIA_TENSORRT_ROOT="/usr/local/tensorrt"
+NNADAPTER_WITH_KUNLUNXIN_XTCL=OFF
+NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=""
+NNADAPTER_KUNLUNXIN_XTCL_SDK_URL=""
+# bdcentos_x86_64, ubuntu_x86_64 or kylin_aarch64
+NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=""
+NNADAPTER_WITH_INTEL_OPENVINO=OFF
+# /opt/intel/openvino_<version>
+NNADAPTER_INTEL_OPENVINO_SDK_ROOT=""
+NNADAPTER_WITH_GOOGLE_XNNPACK=OFF
+NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG="master"
+
 # options of compiling baidu XPU lib.
-WITH_BAIDU_XPU=OFF
-WITH_BAIDU_XPU_XTCL=OFF
-BAIDU_XPU_SDK_ROOT=""
-BAIDU_XPU_SDK_URL=""
-BAIDU_XPU_SDK_ENV=""
+WITH_KUNLUNXIN_XPU=OFF
+KUNLUNXIN_XPU_SDK_URL=""
+KUNLUNXIN_XPU_XDNN_URL=""
+KUNLUNXIN_XPU_XRE_URL=""
+KUNLUNXIN_XPU_SDK_ENV=""
+KUNLUNXIN_XPU_SDK_ROOT=""
 # options of compiling intel fpga.
 WITH_INTEL_FPGA=OFF
 INTEL_FPGA_SDK_ROOT="$(pwd)/intel_fpga_sdk"
@@ -78,8 +100,10 @@ readonly NUM_PROC=${LITE_BUILD_THREADS:-4}
 #####################################################################################################
 # 2. local variables, these variables should not be changed.
 #####################################################################################################
-# url that stores third-party zip file to accelerate third-paty lib installation
-readonly THIRDPARTY_TAR=https://paddlelite-data.bj.bcebos.com/third_party_libs/third-party-ea5576.tar.gz
+# url that stores third-party tar.gz file to accelerate third-party lib installation
+readonly THIRDPARTY_URL=https://paddlelite-data.bj.bcebos.com/third_party_libs/
+readonly THIRDPARTY_TAR=third-party-91a9ab3.tar.gz
+
 # absolute path of Paddle-Lite.
 readonly workspace=$PWD/$(dirname $0)/../../
 # basic options for linux compiling.
@@ -143,7 +167,12 @@ function init_cmake_mutable_options {
         WITH_EXTRA=ON
     fi
 
-    if [ "${WITH_BAIDU_XPU}" == "ON" ]; then
+    if [ "${WITH_KUNLUNXIN_XPU}" == "ON" ]; then
+        WITH_EXTRA=ON
+        WITH_TINY_PUBLISH=OFF
+    fi
+
+    if [ "${DNNADAPTER_WITH_KUNLUNXIN_XTCL}" == "ON" ]; then
         WITH_EXTRA=ON
         WITH_TINY_PUBLISH=OFF
     fi
@@ -173,23 +202,44 @@ function init_cmake_mutable_options {
                         -DLITE_WITH_METAL=$WITH_METAL \
                         -DLITE_WITH_RKNPU=$WITH_ROCKCHIP_NPU \
                         -DRKNPU_DDK_ROOT=$ROCKCHIP_NPU_SDK_ROOT \
-                        -DLITE_WITH_XPU=$WITH_BAIDU_XPU \
-                        -DLITE_WITH_XTCL=$WITH_BAIDU_XPU_XTCL \
-                        -DXPU_SDK_ROOT=$BAIDU_XPU_SDK_ROOT \
-                        -DXPU_SDK_URL=$BAIDU_XPU_SDK_URL \
-                        -DXPU_SDK_ENV=$BAIDU_XPU_SDK_ENV \
+                        -DLITE_WITH_XPU=$WITH_KUNLUNXIN_XPU \
+                        -DXPU_SDK_URL=$KUNLUNXIN_XPU_SDK_URL \
+                        -DXPU_XDNN_URL=$KUNLUNXIN_XPU_XDNN_URL \
+                        -DXPU_XRE_URL=$KUNLUNXIN_XPU_XRE_URL \
+                        -DXPU_SDK_ENV=$KUNLUNXIN_XPU_SDK_ENV \
+                        -DXPU_SDK_ROOT=$KUNLUNXIN_XPU_SDK_ROOT \
                         -DLITE_WITH_TRAIN=$WITH_TRAIN  \
                         -DLITE_WITH_NNADAPTER=$WITH_NNADAPTER \
                         -DNNADAPTER_WITH_ROCKCHIP_NPU=$NNADAPTER_WITH_ROCKCHIP_NPU \
                         -DNNADAPTER_ROCKCHIP_NPU_SDK_ROOT=$NNADAPTER_ROCKCHIP_NPU_SDK_ROOT \
+                        -DNNADAPTER_WITH_EEASYTECH_NPU=$NNADAPTER_WITH_EEASYTECH_NPU \
+                        -DNNADAPTER_EEASYTECH_NPU_SDK_ROOT=$NNADAPTER_EEASYTECH_NPU_SDK_ROOT \
                         -DNNADAPTER_WITH_IMAGINATION_NNA=$NNADAPTER_WITH_IMAGINATION_NNA \
                         -DNNADAPTER_IMAGINATION_NNA_SDK_ROOT=$NNADAPTER_IMAGINATION_NNA_SDK_ROOT \
                         -DNNADAPTER_WITH_HUAWEI_ASCEND_NPU=$NNADAPTER_WITH_HUAWEI_ASCEND_NPU \
                         -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT=$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT \
+                        -DNNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION=$NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION \
                         -DNNADAPTER_WITH_AMLOGIC_NPU=$NNADAPTER_WITH_AMLOGIC_NPU \
                         -DNNADAPTER_AMLOGIC_NPU_SDK_ROOT=$NNADAPTER_AMLOGIC_NPU_SDK_ROOT \
                         -DNNADAPTER_WITH_CAMBRICON_MLU=$NNADAPTER_WITH_CAMBRICON_MLU \
                         -DNNADAPTER_CAMBRICON_MLU_SDK_ROOT=$NNADAPTER_CAMBRICON_MLU_SDK_ROOT \
+                        -DNNADAPTER_WITH_VERISILICON_TIMVX=$NNADAPTER_WITH_VERISILICON_TIMVX \
+                        -DNNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG=$NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG \
+                        -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT \
+                        -DNNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL=$NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL \
+                        -DNNADAPTER_WITH_FAKE_DEVICE=$NNADAPTER_WITH_FAKE_DEVICE \
+                        -DNNADAPTER_FAKE_DEVICE_SDK_ROOT=$NNADAPTER_FAKE_DEVICE_SDK_ROOT \
+                        -DNNADAPTER_WITH_NVIDIA_TENSORRT=$NNADAPTER_WITH_NVIDIA_TENSORRT \
+                        -DNNADAPTER_NVIDIA_CUDA_ROOT=$NNADAPTER_NVIDIA_CUDA_ROOT \
+                        -DNNADAPTER_NVIDIA_TENSORRT_ROOT=$NNADAPTER_NVIDIA_TENSORRT_ROOT \
+                        -DNNADAPTER_WITH_KUNLUNXIN_XTCL=$NNADAPTER_WITH_KUNLUNXIN_XTCL \
+                        -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT \
+                        -DNNADAPTER_KUNLUNXIN_XTCL_SDK_URL=$NNADAPTER_KUNLUNXIN_XTCL_SDK_URL \
+                        -DNNADAPTER_KUNLUNXIN_XTCL_SDK_ENV=$NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV \
+                        -DNNADAPTER_WITH_INTEL_OPENVINO=$NNADAPTER_WITH_INTEL_OPENVINO \
+                        -DNNADAPTER_INTEL_OPENVINO_SDK_ROOT=$NNADAPTER_INTEL_OPENVINO_SDK_ROOT \
+                        -DNNADAPTER_WITH_GOOGLE_XNNPACK=$NNADAPTER_WITH_GOOGLE_XNNPACK \
+                        -DNNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG=$NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG \
                         -DLITE_WITH_INTEL_FPGA=$WITH_INTEL_FPGA \
                         -DINTEL_FPGA_SDK_ROOT=${INTEL_FPGA_SDK_ROOT} \
                         -DLITE_WITH_PROFILE=${WITH_PROFILE} \
@@ -243,12 +293,12 @@ function prepare_opencl_source_code {
 # 3.3 prepare third_party libraries for compiling
 # here we store third_party libraries into Paddle-Lite/third-party
 function prepare_thirdparty {
-    if [ ! -d $workspace/third-party -o -f $workspace/third-party-ea5576.tar.gz ]; then
+    if [ ! -d $workspace/third-party -o -f $workspace/$THIRDPARTY_TAR ]; then
         rm -rf $workspace/third-party
-        if [ ! -f $workspace/third-party-ea5576.tar.gz ]; then
-            wget $THIRDPARTY_TAR
+        if [ ! -f $workspace/$THIRDPARTY_TAR ]; then
+            wget $THIRDPARTY_URL/$THIRDPARTY_TAR
         fi
-        tar xzf third-party-ea5576.tar.gz
+        tar xzf $THIRDPARTY_TAR
     else
         git submodule update --init --recursive
     fi
@@ -283,8 +333,8 @@ function make_publish_so {
     if [ "${WITH_METAL}" = "ON" ]; then
         build_dir=${build_dir}.metal
     fi
-    if [ "${WITH_BAIDU_XPU}" = "ON" ]; then
-        build_dir=${build_dir}.baidu_xpu
+    if [ "${WITH_KUNLUNXIN_XPU}" = "ON" ]; then
+        build_dir=${build_dir}.kunlunxin_xpu
     fi
 
     if [ -d $build_dir ]; then
@@ -369,15 +419,22 @@ function print_usage {
     echo -e "|             you can download cambricon MLU SDK from:                                                                                                 |"
     echo -e "|  detailed information about Paddle-Lite CAMBRICON MLU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/cambricon_mlu.html                  |"
     echo -e "|                                                                                                                                                      |"
-    echo -e "|  arguments of baidu xpu library compiling:                                                                                                           |"
-    echo -e "|     ./lite/tools/build_linux.sh --arch=x86 --with_baidu_xpu=ON                                                                                       |"
-    echo -e "|     ./lite/tools/build_linux.sh --arch=armv8 --with_baidu_xpu=ON                                                                                     |"
-    echo -e "|     --with_baidu_xpu: (OFF|ON); controls whether to compile lib for baidu_xpu, default is OFF.                                                       |"
-    echo -e "|     --with_baidu_xpu_xtcl: (OFF|ON); controls whether to enable xtcl for baidu_xpu, default is OFF.                                                  |"
-    echo -e "|     --baidu_xpu_sdk_root: (path to baidu_xpu DDK file) optional, default is None                                                                     |"
-    echo -e "|     --baidu_xpu_sdk_url: (baidu_xpu sdk download url) optional, default is 'https://baidu-kunlun-product.cdn.bcebos.com/KL-SDK/klsdk-dev_paddle'     |"
-    echo -e "|     --baidu_xpu_sdk_env: (bdcentos_x86_64|centos7_x86_64|ubuntu_x86_64|kylin_aarch64) optional,                                                      |"
+    echo -e "|  arguments of kunlunxin xpu library compiling:                                                                                                       |"
+    echo -e "|     ./lite/tools/build_linux.sh --arch=x86 --with_kunlunxin_xpu=ON                                                                                   |"
+    echo -e "|     ./lite/tools/build_linux.sh --arch=armv8 --with_kunlunxin_xpu=ON                                                                                 |"
+    echo -e "|     --with_kunlunxin_xpu: (OFF|ON); controls whether to compile lib for kunlunxin_xpu, default is OFF.                                               |"
+    echo -e "|     --kunlunxin_xpu_sdk_url: (kunlunxin_xpu sdk download url) optional, default is                                                                   |"
+    echo -e "|             'https://baidu-kunlun-product.cdn.bcebos.com/KL-SDK/klsdk-dev_paddle'.                                                                   |"
+    echo -e "|             'xdnn' and 'xre' will be download from kunlunxin_xpu_sdk_url, so you don't                                                               |"
+    echo -e "|             need to specify 'kunlunxin_xpu_xdnn_url' or 'kunlunxin_xpu_xre_url' separately.                                                          |"
+    echo -e "|     --kunlunxin_xpu_xdnn_url: (kunlunxin_xpu xdnn download url) optional, default is empty.                                                          |"
+    echo -e "|             It has higher priority than 'kunlunxin_xpu_sdk_url'                                                                                      |"
+    echo -e "|     --kunlunxin_xpu_xre_url: (kunlunxin_xpu xre download url) optional, default is empty.                                                            |"
+    echo -e "|             It has higher priority than 'kunlunxin_xpu_sdk_url'                                                                                      |"
+    echo -e "|     --kunlunxin_xpu_sdk_env: (bdcentos_x86_64|centos7_x86_64|ubuntu_x86_64|kylin_aarch64) optional,                                                  |"
     echo -e "|             default is bdcentos_x86_64(if x86) / kylin_aarch64(if arm)                                                                               |"
+    echo -e "|     --kunlunxin_xpu_sdk_root: (path to kunlunxin_xpu DDK file) optional, default is None                                                             |"
+    echo -e "|  detailed information about Paddle-Lite KUNLUNXIN XPU:  https://paddle-lite.readthedocs.io/zh/latest/demo_guides/kunlunxin_xpu.html                  |"
     echo "--------------------------------------------------------------------------------------------------------------------------------------------------------"
     echo
 }
@@ -497,6 +554,10 @@ function main {
                 NNADAPTER_HUAWEI_ASCEND_NPU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
+            --nnadapter_huawei_ascend_npu_sdk_version=*)
+                NNADAPTER_HUAWEI_ASCEND_NPU_SDK_VERSION="${i#*=}"
+                shift
+                ;;
             --nnadapter_with_amlogic_npu=*)
                 NNADAPTER_WITH_AMLOGIC_NPU="${i#*=}"
                 shift
@@ -513,28 +574,128 @@ function main {
                 NNADAPTER_CAMBRICON_MLU_SDK_ROOT="${i#*=}"
                 shift
                 ;;
-            # compiling lib which can operate on baidu xpu.
-            --with_baidu_xpu=*)
-                WITH_BAIDU_XPU="${i#*=}"
+            --nnadapter_with_verisilicon_timvx=*)
+                NNADAPTER_WITH_VERISILICON_TIMVX="${i#*=}"
                 shift
                 ;;
-            --with_baidu_xpu_xtcl=*)
-                WITH_BAIDU_XPU_XTCL="${i#*=}"
+            --nnadapter_verisilicon_timvx_src_git_tag=*)
+                NNADAPTER_VERISILICON_TIMVX_SRC_GIT_TAG="${i#*=}"
+                shift
+                ;;
+            --nnadapter_verisilicon_timvx_viv_sdk_root=*)
+                NNADAPTER_VERISILICON_TIMVX_VIV_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_verisilicon_timvx_viv_sdk_url=*)
+                NNADAPTER_VERISILICON_TIMVX_VIV_SDK_URL="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_eeasytech_npu=*)
+                NNADAPTER_WITH_EEASYTECH_NPU="${i#*=}"
+                shift
+                ;;
+            --nnadapter_eeasytech_npu_sdk_root=*)
+                NNADAPTER_EEASYTECH_NPU_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_fake_device=*)
+                NNADAPTER_WITH_FAKE_DEVICE="${i#*=}"
+                shift
+                ;;
+            --nnadapter_fake_device_sdk_root=*)
+                NNADAPTER_FAKE_DEVICE_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_nvidia_tensorrt=*)
+                NNADAPTER_WITH_NVIDIA_TENSORRT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_nvidia_cuda_root=*)
+                NNADAPTER_NVIDIA_CUDA_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_nvidia_tensorrt_root=*)
+                NNADAPTER_NVIDIA_TENSORRT_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_kunlunxin_xtcl=*)
+                NNADAPTER_WITH_KUNLUNXIN_XTCL="${i#*=}"
+                shift
+                ;;
+            --nnadapter_kunlunxin_xtcl_sdk_root=*)
+                NNADAPTER_KUNLUNXIN_XTCL_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_kunlunxin_xtcl_sdk_url=*)
+                NNADAPTER_KUNLUNXIN_XTCL_SDK_URL="${i#*=}"
+                shift
+                ;;
+            --nnadapter_kunlunxin_xtcl_sdk_env=*)
+                # bdcentos_x86_64, ubuntu_x86_64, kylin_aarch64
+                NNADAPTER_KUNLUNXIN_XTCL_SDK_ENV="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_intel_openvino=*)
+                NNADAPTER_WITH_INTEL_OPENVINO="${i#*=}"
+                shift
+                ;;
+            --nnadapter_intel_openvino_sdk_root=*)
+                NNADAPTER_INTEL_OPENVINO_SDK_ROOT="${i#*=}"
+                shift
+                ;;
+            --nnadapter_with_google_xnnpack=*)
+                NNADAPTER_WITH_GOOGLE_XNNPACK="${i#*=}"
+                shift
+                ;;
+            --nnadapter_google_xnnpack_src_git_tag=*)
+                NNADAPTER_GOOGLE_XNNPACK_SRC_GIT_TAG="${i#*=}"
+                shift
+                ;;
+            # compiling lib which can operate on baidu xpu.
+            --with_baidu_xpu=*)
+                WITH_KUNLUNXIN_XPU="${i#*=}"
                 shift
                 ;;
             --baidu_xpu_sdk_root=*)
-                BAIDU_XPU_SDK_ROOT="${i#*=}"
-                if [ -n "${BAIDU_XPU_SDK_ROOT}" ]; then
-                    BAIDU_XPU_SDK_ROOT=$(readlink -f ${BAIDU_XPU_SDK_ROOT})
+                KUNLUNXIN_XPU_SDK_ROOT="${i#*=}"
+                if [ -n "${KUNLUNXIN_XPU_SDK_ROOT}" ]; then
+                    KUNLUNXIN_XPU_SDK_ROOT=$(readlink -f ${KUNLUNXIN_XPU_SDK_ROOT})
                 fi
                 shift
                 ;;
             --baidu_xpu_sdk_url=*)
-                BAIDU_XPU_SDK_URL="${i#*=}"
+                KUNLUNXIN_XPU_SDK_URL="${i#*=}"
                 shift
                 ;;
             --baidu_xpu_sdk_env=*)
-                BAIDU_XPU_SDK_ENV="${i#*=}"
+                KUNLUNXIN_XPU_SDK_ENV="${i#*=}"
+                shift
+                ;;
+            --with_kunlunxin_xpu=*)
+                WITH_KUNLUNXIN_XPU="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xpu_sdk_url=*)
+                KUNLUNXIN_XPU_SDK_URL="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xpu_xdnn_url=*)
+                KUNLUNXIN_XPU_XDNN_URL="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xpu_xre_url=*)
+                KUNLUNXIN_XPU_XRE_URL="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xpu_sdk_env=*)
+                KUNLUNXIN_XPU_SDK_ENV="${i#*=}"
+                shift
+                ;;
+            --kunlunxin_xpu_sdk_root=*)
+                KUNLUNXIN_XPU_SDK_ROOT="${i#*=}"
+                if [ -n "${KUNLUNXIN_XPU_SDK_ROOT}" ]; then
+                    KUNLUNXIN_XPU_SDK_ROOT=$(readlink -f ${KUNLUNXIN_XPU_SDK_ROOT})
+                fi
                 shift
                 ;;
             # compiling lib which can operate on intel fpga.

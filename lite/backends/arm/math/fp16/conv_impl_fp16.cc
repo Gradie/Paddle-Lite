@@ -327,7 +327,11 @@ void conv1x1s1_gemm_fp16(CONV_PARAM(float16_t)) {
                   act_param,
                   ctx);
       } else if (m == 1) {
+#ifdef TARGET_IOS
+        float16_t* bias_ptr = new float16_t[n];
+#else
         float16_t bias_ptr[n];  // NOLINT
+#endif
         if (flag_bias) {
           for (int i = 0; i < n; i++) {
             bias_ptr[i] = bias_group[0];
@@ -346,6 +350,9 @@ void conv1x1s1_gemm_fp16(CONV_PARAM(float16_t)) {
                   act_param.has_active,
                   act_param,
                   ctx);
+#ifdef TARGET_IOS
+        delete[] bias_ptr;
+#endif
       } else {
         gemm_prepack_fp16(false,
                           m,
@@ -435,7 +442,11 @@ void conv_im2col_gemm_fp16(CONV_PARAM(float16_t)) {
                   act_param,
                   ctx);
       } else if (m == 1) {
+#ifdef TARGET_IOS
+        float16_t* bias_ptr = new float16_t[n];
+#else
         float16_t bias_ptr[n];  // NOLINT
+#endif
         if (flag_bias) {
           for (int i = 0; i < n; i++) {
             bias_ptr[i] = bias_group[0];
@@ -454,6 +465,9 @@ void conv_im2col_gemm_fp16(CONV_PARAM(float16_t)) {
                   act_param.has_active,
                   act_param,
                   ctx);
+#ifdef TARGET_IOS
+        delete[] bias_ptr;
+#endif
       } else {
         gemm_prepack_fp16(false,
                           m,
@@ -506,14 +520,14 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
     switch (act_type) {
       case lite_api::ActivationType::kRelu:
         if (stride == 1 && pad_h == 1 && pad_w == 1) {
-          if (win <= 8)
+          if (ow <= 8)
             conv_depthwise_3x3s1p1_bias_relu_small_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
           else
             conv_depthwise_3x3s1p1_bias_relu_common_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
         } else if (stride == 1 && pad_h == 0 && pad_w == 0) {
-          if (win <= 9)
+          if (ow <= 8)
             conv_depthwise_3x3s1p0_bias_relu_small_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
           else
@@ -541,14 +555,14 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
         break;
       case lite_api::ActivationType::kRelu6:
         if (stride == 1 && pad_h == 1 && pad_w == 1) {
-          if (win <= 8)
+          if (ow <= 8)
             conv_depthwise_3x3s1p1_bias_relu6_small_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
           else
             conv_depthwise_3x3s1p1_bias_relu6_common_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
         } else if (stride == 1 && pad_h == 0 && pad_w == 0) {
-          if (win <= 9)
+          if (ow <= 8)
             conv_depthwise_3x3s1p0_bias_relu6_small_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
           else
@@ -576,14 +590,14 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
         break;
       case lite_api::ActivationType::kLeakyRelu:
         if (stride == 1 && pad_h == 1 && pad_w == 1) {
-          if (win <= 8)
+          if (ow <= 8)
             conv_depthwise_3x3s1p1_bias_leaky_relu_small_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
           else
             conv_depthwise_3x3s1p1_bias_leaky_relu_common_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
         } else if (stride == 1 && pad_h == 0 && pad_w == 0) {
-          if (win <= 9)
+          if (ow <= 8)
             conv_depthwise_3x3s1p0_bias_leaky_relu_small_fp16_fp16(
                 CONV_DEPTHWISE_IN_PARAMS);
           else
@@ -616,14 +630,14 @@ void conv_depthwise_3x3_fp16(CONV_PARAM(float16_t)) {
     }
   } else {
     if (stride == 1 && pad_h == 1 && pad_w == 1) {
-      if (win <= 8)
+      if (ow <= 8)
         conv_depthwise_3x3s1p1_bias_noact_small_fp16_fp16(
             CONV_DEPTHWISE_IN_PARAMS);
       else
         conv_depthwise_3x3s1p1_bias_noact_common_fp16_fp16(
             CONV_DEPTHWISE_IN_PARAMS);
     } else if (stride == 1 && pad_h == 0 && pad_w == 0) {
-      if (win <= 9)
+      if (ow <= 8)
         conv_depthwise_3x3s1p0_bias_noact_small_fp16_fp16(
             CONV_DEPTHWISE_IN_PARAMS);
       else

@@ -73,6 +73,15 @@ bool IsOpenCLBackendValid(bool check_fp16_valid) {
   return opencl_valid;
 }
 
+int GetOpenCLDeviceType() {
+#ifdef LITE_WITH_OPENCL
+  if (IsOpenCLBackendValid()) {
+    return paddle::lite::CLRuntime::Global()->GetGpuType();
+  }
+#endif
+  return -1;
+}
+
 Tensor::Tensor(void *raw) : raw_tensor_(raw) {}
 
 // TODO(Superjomn) refine this by using another `const void* const_raw`;
@@ -403,6 +412,11 @@ void ConfigBase::set_metal_use_memory_reuse(bool flag) {
   return;
 }
 
+void ConfigBase::add_discarded_pass(const std::string pass) {
+  discarded_passes_.push_back(pass);
+  return;
+}
+
 #ifdef LITE_WITH_X86
 void ConfigBase::set_x86_math_num_threads(int threads) {
   x86_math_num_threads_ = threads;
@@ -563,6 +577,16 @@ void CxxConfig::set_xpu_dev_per_thread(int dev_no) {
 #else
   LOG(WARNING) << "The invoking of the function 'set_xpu_dev_per_thread' is "
                   "ignored, please rebuild it with LITE_WITH_XPU=ON.";
+#endif
+}
+
+void CxxConfig::enable_xpu_multi_stream() {
+#ifdef LITE_WITH_XPU
+  lite::TargetWrapperXPU::enable_xpu_multi_stream();
+#else
+  LOG(WARNING)
+      << "The invoking of the function 'enable_xpu_stream_per_thread' is "
+         "ignored, please rebuild it with LITE_WITH_XPU=ON.";
 #endif
 }
 
